@@ -6,9 +6,9 @@ Stock Pulse generates a concise, trader-oriented news summary for a given stock 
 
 End-to-end flow: enter a ticker, generate an AI summary, and browse key points plus sources.
 
-![Stock Pulse demo](docs/screenshots/demo.gif)
+Stock Pulse demo
 
-A higher-quality version is available as [`docs/screenshots/demo.mp4`](docs/screenshots/demo.mp4).
+A higher-quality version is available as `[docs/screenshots/demo.mp4](docs/screenshots/demo.mp4)`.
 
 ## Features
 
@@ -230,6 +230,4 @@ Coverage includes symbol validation, Finnhub news/profile normalization (includi
 cd frontend
 npm test
 ```
-
-Covers the HTTP service URL construction and component loading, error, and summary states (logo identity and source ticker chips).
 
