@@ -2,6 +2,16 @@
 
 Stock Pulse generates a concise, trader-oriented news summary for a given stock ticker. The Angular client sends a symbol to a FastAPI backend, which pulls recent company news from Finnhub, summarizes it with OpenAI, and returns structured text plus source links.
 
+## Screenshots
+
+Landing page with ticker search and quick suggestions:
+
+![Stock Pulse home](docs/screenshots/home.png)
+
+AI summary for `AAPL` — company identity, key points, and source articles:
+
+![Stock Pulse AAPL summary](docs/screenshots/summary-aapl.png)
+
 ## Features
 
 - Look up a ticker (e.g. `AAPL`) from a responsive single-page UI
@@ -13,14 +23,20 @@ Stock Pulse generates a concise, trader-oriented news summary for a given stock 
 - Quick-suggestion tickers and auto-uppercase symbol input
 - Cache repeated requests in memory with a configurable TTL (`cached` flag in the response)
 
+
+
 ## Stack
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | Angular 19 (standalone), Angular Material, RxJS, Jest |
-| Backend | FastAPI, Pydantic v2, httpx, uvicorn |
+
+| Layer         | Technology                                               |
+| ------------- | -------------------------------------------------------- |
+| Frontend      | Angular 19 (standalone), Angular Material, RxJS, Jest    |
+| Backend       | FastAPI, Pydantic v2, httpx, uvicorn                     |
 | External APIs | Finnhub (company news + profile), OpenAI (summarization) |
-| Testing | pytest (backend), Jest (frontend) |
+| Testing       | pytest (backend), Jest (frontend)                        |
+
+
+
 
 ## Architecture
 
@@ -46,20 +62,28 @@ API keys stay on the server. News and profile are fetched concurrently; a missin
 - [OpenAI API key](https://platform.openai.com/api-keys)
 - [Finnhub API key](https://finnhub.io/register) (free tier is sufficient)
 
+
+
 ## Configuration
 
 Copy `backend/.env.example` to `backend/.env` and set:
 
-| Variable | Required | Default | Description |
-| --- | --- | --- | --- |
-| `OPENAI_API_KEY` | yes | — | OpenAI credentials |
-| `FINNHUB_API_KEY` | yes | — | Finnhub credentials |
-| `OPENAI_MODEL` | no | `gpt-4o-mini` | Chat model used for summaries |
-| `CACHE_TTL_SECONDS` | no | `300` | In-memory cache lifetime |
-| `CORS_ORIGINS` | no | `http://localhost:4200` | Allowed frontend origins (comma-separated) |
-| `LOG_LEVEL` | no | `INFO` | Application log level |
+
+| Variable            | Required | Default                 | Description                                |
+| ------------------- | -------- | ----------------------- | ------------------------------------------ |
+| `OPENAI_API_KEY`    | yes      | —                       | OpenAI credentials                         |
+| `FINNHUB_API_KEY`   | yes      | —                       | Finnhub credentials                        |
+| `OPENAI_MODEL`      | no       | `gpt-4o-mini`           | Chat model used for summaries              |
+| `CACHE_TTL_SECONDS` | no       | `300`                   | In-memory cache lifetime                   |
+| `CORS_ORIGINS`      | no       | `http://localhost:4200` | Allowed frontend origins (comma-separated) |
+| `LOG_LEVEL`         | no       | `INFO`                  | Application log level                      |
+
+
+
 
 ## Setup
+
+
 
 ### Backend
 
@@ -84,8 +108,10 @@ cd backend
 uvicorn app.main:app --reload --port 8000
 ```
 
-- API: http://localhost:8000  
-- OpenAPI docs: http://localhost:8000/docs  
+- API: [http://localhost:8000](http://localhost:8000)  
+- OpenAPI docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+
 
 ### Frontend
 
@@ -95,9 +121,11 @@ npm install
 npm start
 ```
 
-App: http://localhost:4200
+App: [http://localhost:4200](http://localhost:4200)
 
 ## API
+
+
 
 ### `GET /health`
 
@@ -105,11 +133,13 @@ App: http://localhost:4200
 { "status": "ok" }
 ```
 
+
+
 ### `GET /api/stocks/{symbol}/summary`
 
 Returns an AI summary for the given ticker.
 
-**Success (`200`)**
+**Success (**`200`**)**
 
 ```json
 {
@@ -134,11 +164,15 @@ Returns an AI summary for the given ticker.
 
 **Errors**
 
-| Status | When |
-| --- | --- |
-| `400` | Invalid symbol |
-| `404` | No recent news for the symbol |
-| `502` | Finnhub or OpenAI upstream failure |
+
+| Status | When                               |
+| ------ | ---------------------------------- |
+| `400`  | Invalid symbol                     |
+| `404`  | No recent news for the symbol      |
+| `502`  | Finnhub or OpenAI upstream failure |
+
+
+
 
 ## Project layout
 
@@ -157,22 +191,28 @@ frontend/
   src/environments API base URL (dev/prod)
 ```
 
+
+
 ## Design decisions
 
-| Choice | Rationale |
-| --- | --- |
-| Angular + FastAPI | Typed SPA and async Python API with OpenAPI docs and clear separation of UI vs. orchestration |
-| Finnhub as the news source | Stable REST API; avoids brittle HTML scraping |
-| Finnhub profile for logo/name | Company identity is not in the news payload; profile2 is the dedicated source |
-| Soft-fail on profile | Logo/name enrich the UI; missing profile still returns a full summary |
-| `related_symbols` on sources | Finnhub `related` field surfaces co-mentioned tickers without extra calls |
-| Server-side OpenAI calls | Keeps API keys off the client |
-| Explicit empty/error responses | Never invent headlines when news is missing or providers fail |
-| In-memory TTL cache | Low latency for repeated local lookups without external infrastructure |
-| Responsive single-page UI | Brand-led hero, suggestion chips, and fluid layout across breakpoints |
-| pydantic-settings | Typed configuration with `.env` loading |
-| stdlib logging | Sufficient observability for a single-process service (logs go to the uvicorn terminal) |
-| pytest + Jest with mocks | Fast, deterministic tests without live API calls |
+
+| Choice                         | Rationale                                                                                     |
+| ------------------------------ | --------------------------------------------------------------------------------------------- |
+| Angular + FastAPI              | Typed SPA and async Python API with OpenAPI docs and clear separation of UI vs. orchestration |
+| Finnhub as the news source     | Stable REST API; avoids brittle HTML scraping                                                 |
+| Finnhub profile for logo/name  | Company identity is not in the news payload; profile2 is the dedicated source                 |
+| Soft-fail on profile           | Logo/name enrich the UI; missing profile still returns a full summary                         |
+| `related_symbols` on sources   | Finnhub `related` field surfaces co-mentioned tickers without extra calls                     |
+| Server-side OpenAI calls       | Keeps API keys off the client                                                                 |
+| Explicit empty/error responses | Never invent headlines when news is missing or providers fail                                 |
+| In-memory TTL cache            | Low latency for repeated local lookups without external infrastructure                        |
+| Responsive single-page UI      | Brand-led hero, suggestion chips, and fluid layout across breakpoints                         |
+| pydantic-settings              | Typed configuration with `.env` loading                                                       |
+| stdlib logging                 | Sufficient observability for a single-process service (logs go to the uvicorn terminal)       |
+| pytest + Jest with mocks       | Fast, deterministic tests without live API calls                                              |
+
+
+
 
 ## Tests
 
@@ -195,12 +235,3 @@ npm test
 
 Covers the HTTP service URL construction and component loading, error, and summary states (logo identity and source ticker chips).
 
-## Roadmap
-
-Possible production hardening steps:
-
-- Shared cache (e.g. Redis) across multiple API instances
-- Async workers for watchlists or high-traffic tickers
-- Persistent store for audit trails and prompt evaluation
-- Metrics for latency, cache hit rate, and token usage
-- Containerized deploy (Docker) to preferred cloud runtime
