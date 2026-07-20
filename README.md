@@ -2,15 +2,13 @@
 
 Stock Pulse generates a concise, trader-oriented news summary for a given stock ticker. The Angular client sends a symbol to a FastAPI backend, which pulls recent company news from Finnhub, summarizes it with OpenAI, and returns structured text plus source links.
 
-## Screenshots
+## Demo
 
-Landing page with ticker search and quick suggestions:
+End-to-end flow: enter a ticker, generate an AI summary, and browse key points plus sources.
 
-![Stock Pulse home](docs/screenshots/home.png)
+![Stock Pulse demo](docs/screenshots/demo.gif)
 
-AI summary for `AAPL` — company identity, key points, and source articles:
-
-![Stock Pulse AAPL summary](docs/screenshots/summary-aapl.png)
+A higher-quality version is available as [`docs/screenshots/demo.mp4`](docs/screenshots/demo.mp4).
 
 ## Features
 
