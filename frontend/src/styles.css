@@ -1,0 +1,57 @@
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+:root {
+  --ink: #0a1612;
+  --ink-soft: #24352e;
+  --mist: #dfeae4;
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-solid: #f3f7f5;
+  --line: rgba(15, 40, 30, 0.12);
+  --pulse: #0d8f62;
+  --pulse-deep: #076647;
+  --pulse-glow: rgba(13, 143, 98, 0.18);
+  --danger-bg: #f7e6e3;
+  --danger-ink: #7a2a22;
+  --radius: 0.75rem;
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-body: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  --shadow-soft: 0 18px 50px rgba(10, 22, 18, 0.08);
+  --page-pad: clamp(1rem, 4vw, 2.5rem);
+  --content-max: 44rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background-color: #e4eee9;
+  background-image:
+    radial-gradient(ellipse 80% 55% at 10% -10%, rgba(13, 143, 98, 0.16), transparent 55%),
+    radial-gradient(ellipse 60% 45% at 100% 0%, rgba(36, 80, 70, 0.1), transparent 50%),
+    linear-gradient(165deg, #edf4f0 0%, #d8e6df 48%, #e8f0eb 100%);
+  background-attachment: fixed;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--pulse);
+  outline-offset: 2px;
+}

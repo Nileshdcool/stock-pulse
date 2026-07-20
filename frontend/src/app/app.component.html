@@ -1,0 +1,158 @@
+<div class="shell">
+  <div class="ambient" aria-hidden="true">
+    <span class="orb orb-a"></span>
+    <span class="orb orb-b"></span>
+    <span class="grid"></span>
+  </div>
+
+  <main class="page">
+    <header class="hero">
+      <p class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        Stock Pulse
+      </p>
+      <h1>News that moves the market, distilled.</h1>
+      <p class="lede">
+        Enter a ticker for an AI summary of recent company headlines.
+      </p>
+    </header>
+
+    <form class="search" (submit)="onFormSubmit($event)">
+      <mat-form-field appearance="outline" class="symbol-field" subscriptSizing="dynamic">
+        <mat-label>Stock symbol</mat-label>
+        <input
+          matInput
+          [formControl]="symbolControl"
+          placeholder="e.g. AAPL"
+          autocomplete="off"
+          aria-label="Stock symbol"
+          (input)="onSymbolInput()"
+        />
+        @if (symbolControl.invalid && symbolControl.touched) {
+          <mat-error>Enter a valid ticker (letters, numbers, . or -)</mat-error>
+        }
+      </mat-form-field>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        class="submit-btn"
+        [disabled]="loading"
+      >
+        {{ loading ? 'Working…' : 'Get summary' }}
+      </button>
+    </form>
+
+    <p class="suggestions">
+      Try
+      @for (symbol of suggestions; track symbol; let last = $last) {
+        <button type="button" class="suggestion" (click)="useSuggestion(symbol)">
+          {{ symbol }}
+        </button>
+        @if (!last) {
+          <span class="dot" aria-hidden="true">·</span>
+        }
+      }
+    </p>
+
+    @if (loading) {
+      <div class="state loading" role="status">
+        <mat-spinner diameter="32"></mat-spinner>
+        <div>
+          <strong>Reading the tape</strong>
+          <span>Fetching news and generating summary…</span>
+        </div>
+      </div>
+    }
+
+    @if (error) {
+      <div class="state error" role="alert">
+        <strong>Something went wrong</strong>
+        <span>{{ error }}</span>
+      </div>
+    }
+
+    @if (result) {
+      <section class="result" aria-live="polite">
+        <div class="result-head">
+          <div class="identity">
+            @if (result.logo_url && !logoFailed) {
+              <img
+                class="company-logo"
+                [src]="result.logo_url"
+                [alt]="(result.company_name || result.symbol) + ' logo'"
+                width="52"
+                height="52"
+                loading="lazy"
+                (error)="onLogoError()"
+              />
+            } @else {
+              <span class="company-logo company-logo-fallback" aria-hidden="true">
+                {{ result.symbol.slice(0, 2) }}
+              </span>
+            }
+
+            <div class="identity-text">
+              <div class="identity-title">
+                <h2>{{ result.symbol }}</h2>
+                @if (result.cached) {
+                  <span class="badge">cached</span>
+                }
+              </div>
+              @if (result.company_name) {
+                <p class="company-name">{{ result.company_name }}</p>
+              }
+            </div>
+          </div>
+
+          @if (result.generated_at) {
+            <time class="generated" [attr.datetime]="result.generated_at">
+              {{ formatGeneratedAt(result.generated_at) }}
+            </time>
+          }
+        </div>
+
+        <p class="summary">{{ result.summary }}</p>
+
+        @if (result.bullets.length) {
+          <div class="key-points">
+            <h3>Key points</h3>
+            <ul class="bullets">
+              @for (bullet of result.bullets; track bullet) {
+                <li>{{ bullet }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div class="sources-block">
+          <h3>Sources</h3>
+          <ul class="sources">
+            @for (source of result.sources; track source.url) {
+              <li>
+                <a [href]="source.url" target="_blank" rel="noopener noreferrer">
+                  <span class="source-top">
+                    <span class="source-tickers">
+                      @for (ticker of tickersFor(source); track ticker) {
+                        <span class="ticker-chip">{{ ticker }}</span>
+                      }
+                    </span>
+                    <span class="source-title">{{ source.title }}</span>
+                  </span>
+                  <span class="meta">
+                    {{ source.source }}
+                    @if (source.published_at) {
+                      <span aria-hidden="true">·</span>
+                      {{ formatPublishedAt(source.published_at) }}
+                    }
+                  </span>
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+    }
+  </main>
+</div>
