@@ -8,7 +8,7 @@ Think of it as a quick “what’s going on with this stock?” brief — not a 
 
 End-to-end flow: enter a ticker, generate an AI summary, and browse key points plus sources.
 
-Stock Pulse demo
+![Stock Pulse demo](docs/screenshots/demo.gif)
 
 A higher-quality version lives at [`docs/screenshots/demo.mp4`](docs/screenshots/demo.mp4).
 
