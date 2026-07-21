@@ -1,6 +1,8 @@
 # Stock Pulse
 
-Stock Pulse generates a concise, trader-oriented news summary for a given stock ticker. The Angular client sends a symbol to a FastAPI backend, which pulls recent company news from Finnhub, summarizes it with OpenAI, and returns structured text plus source links.
+Stock Pulse is a small app that turns recent company news into a short, trader-friendly summary. You type a ticker like `AAPL`, the Angular UI asks the FastAPI backend for a summary, and the backend pulls news from Finnhub, asks OpenAI to distill it, and sends back readable text plus source links.
+
+Think of it as a quick “what’s going on with this stock?” brief — not a research terminal.
 
 ## Demo
 
@@ -8,23 +10,19 @@ End-to-end flow: enter a ticker, generate an AI summary, and browse key points p
 
 Stock Pulse demo
 
-A higher-quality version is available as `[docs/screenshots/demo.mp4](docs/screenshots/demo.mp4)`.
+A higher-quality version lives at [`docs/screenshots/demo.mp4`](docs/screenshots/demo.mp4).
 
-## Features
+## What you get
 
-- Look up a ticker (e.g. `AAPL`) from a responsive single-page UI
-- Fetch recent company news via Finnhub (last 7 days)
-- Load company name and logo in parallel from Finnhub company profile
-- Produce a short summary and bullet points with OpenAI (`gpt-4o-mini` by default)
-- Show summary, key points, company identity, and clickable source articles
-- Surface related tickers from each article (`related_symbols`) as chips on sources
+- Look up a ticker from a simple, responsive UI
+- Pull recent company news from Finnhub (last 7 days)
+- Load company name and logo in parallel from Finnhub’s profile endpoint
+- Get a short summary and bullet points from OpenAI (`gpt-4o-mini` by default)
+- See sources with clickable links, plus related tickers as chips
 - Quick-suggestion tickers and auto-uppercase symbol input
-- Cache repeated requests in memory with a configurable TTL (`cached` flag in the response)
-
-
+- In-memory caching for repeated lookups (response includes a `cached` flag)
 
 ## Stack
-
 
 | Layer         | Technology                                               |
 | ------------- | -------------------------------------------------------- |
@@ -33,10 +31,47 @@ A higher-quality version is available as `[docs/screenshots/demo.mp4](docs/scree
 | External APIs | Finnhub (company news + profile), OpenAI (summarization) |
 | Testing       | pytest (backend), Jest (frontend)                        |
 
+## System architecture
 
+At a high level, the browser talks only to our API. The API owns the keys, fetches news and profile data, optionally serves a cached result, and calls OpenAI when it needs a fresh summary.
 
+```mermaid
+flowchart TB
+  subgraph Client["Client"]
+    UI["Angular SPA<br/>localhost:4200"]
+  end
 
-## Architecture
+  subgraph Backend["Stock Pulse API"]
+    API["FastAPI<br/>localhost:8000"]
+    Cache["In-memory TTL cache"]
+    NewsSvc["News service"]
+    SummarySvc["Summary service"]
+  end
+
+  subgraph External["External providers"]
+    Finnhub["Finnhub<br/>news + company profile"]
+    OpenAI["OpenAI<br/>gpt-4o-mini"]
+  end
+
+  UI -->|"GET /api/stocks/{symbol}/summary"| API
+  API --> Cache
+  Cache -.->|"miss"| NewsSvc
+  Cache -.->|"miss"| SummarySvc
+  NewsSvc -->|"parallel"| Finnhub
+  SummarySvc --> OpenAI
+  API -->|"summary, bullets, sources, logo"| UI
+```
+
+### Request flow
+
+1. User enters a symbol in the Angular UI.
+2. Frontend calls `GET /api/stocks/{symbol}/summary`.
+3. Backend validates and normalizes the symbol, then checks the TTL cache.
+4. On a miss, it fetches Finnhub news and company profile **in parallel**.
+5. News is sent to OpenAI for a structured JSON summary (no invented facts).
+6. Response comes back with company identity, summary, bullets, sources, and a `cached` flag.
+
+API keys never leave the server. A missing company profile won’t block the summary. If there’s no recent news or an upstream call fails, the API returns a clear error instead of making something up.
 
 ```text
 Browser (Angular)
@@ -51,21 +86,16 @@ FastAPI
     └─ response: company_name, logo_url, summary, bullets, sources
 ```
 
-API keys stay on the server. News and profile are fetched concurrently; a missing profile does not block the summary. The model is instructed not to invent facts; if there is no news or an upstream call fails, the API returns an explicit error instead of fabricated content.
-
 ## Prerequisites
 
 - Python 3.11+
 - Node.js 20+
 - [OpenAI API key](https://platform.openai.com/api-keys)
-- [Finnhub API key](https://finnhub.io/register) (free tier is sufficient)
-
-
+- [Finnhub API key](https://finnhub.io/register) (free tier is enough)
 
 ## Configuration
 
-Copy `backend/.env.example` to `backend/.env` and set:
-
+Copy `backend/.env.example` to `backend/.env` and fill in your keys:
 
 | Variable            | Required | Default                 | Description                                |
 | ------------------- | -------- | ----------------------- | ------------------------------------------ |
@@ -76,12 +106,7 @@ Copy `backend/.env.example` to `backend/.env` and set:
 | `CORS_ORIGINS`      | no       | `http://localhost:4200` | Allowed frontend origins (comma-separated) |
 | `LOG_LEVEL`         | no       | `INFO`                  | Application log level                      |
 
-
-
-
 ## Setup
-
-
 
 ### Backend
 
@@ -99,17 +124,15 @@ copy backend\.env.example backend\.env
 # cp backend/.env.example backend/.env
 ```
 
-Start the API from the `backend` directory so `.env` is loaded correctly:
+Start the API from the `backend` directory so `.env` loads correctly:
 
 ```bash
 cd backend
 uvicorn app.main:app --reload --port 8000
 ```
 
-- API: [http://localhost:8000](http://localhost:8000)  
+- API: [http://localhost:8000](http://localhost:8000)
 - OpenAPI docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-
-
 
 ### Frontend
 
@@ -123,21 +146,17 @@ App: [http://localhost:4200](http://localhost:4200)
 
 ## API
 
-
-
 ### `GET /health`
 
 ```json
 { "status": "ok" }
 ```
 
-
-
 ### `GET /api/stocks/{symbol}/summary`
 
 Returns an AI summary for the given ticker.
 
-**Success (**`200`**)**
+**Success (`200`)**
 
 ```json
 {
@@ -162,15 +181,11 @@ Returns an AI summary for the given ticker.
 
 **Errors**
 
-
 | Status | When                               |
 | ------ | ---------------------------------- |
 | `400`  | Invalid symbol                     |
 | `404`  | No recent news for the symbol      |
 | `502`  | Finnhub or OpenAI upstream failure |
-
-
-
 
 ## Project layout
 
@@ -189,32 +204,28 @@ frontend/
   src/environments API base URL (dev/prod)
 ```
 
+## Why things are built this way
 
+A few choices worth calling out:
 
-## Design decisions
-
-
-| Choice                         | Rationale                                                                                     |
+| Choice                         | Why we did it                                                                                 |
 | ------------------------------ | --------------------------------------------------------------------------------------------- |
-| Angular + FastAPI              | Typed SPA and async Python API with OpenAPI docs and clear separation of UI vs. orchestration |
-| Finnhub as the news source     | Stable REST API; avoids brittle HTML scraping                                                 |
-| Finnhub profile for logo/name  | Company identity is not in the news payload; profile2 is the dedicated source                 |
-| Soft-fail on profile           | Logo/name enrich the UI; missing profile still returns a full summary                         |
-| `related_symbols` on sources   | Finnhub `related` field surfaces co-mentioned tickers without extra calls                     |
+| Angular + FastAPI              | Typed SPA and async Python API with OpenAPI docs and a clean split between UI and orchestration |
+| Finnhub as the news source     | Stable REST API — no brittle HTML scraping                                                    |
+| Finnhub profile for logo/name  | Company identity isn’t in the news payload; profile2 is the right source                      |
+| Soft-fail on profile           | Logo/name are nice-to-have; missing profile still returns a full summary                      |
+| `related_symbols` on sources   | Finnhub’s `related` field surfaces co-mentioned tickers without extra calls                   |
 | Server-side OpenAI calls       | Keeps API keys off the client                                                                 |
 | Explicit empty/error responses | Never invent headlines when news is missing or providers fail                                 |
-| In-memory TTL cache            | Low latency for repeated local lookups without external infrastructure                        |
-| Responsive single-page UI      | Brand-led hero, suggestion chips, and fluid layout across breakpoints                         |
-| pydantic-settings              | Typed configuration with `.env` loading                                                       |
-| stdlib logging                 | Sufficient observability for a single-process service (logs go to the uvicorn terminal)       |
-| pytest + Jest with mocks       | Fast, deterministic tests without live API calls                                              |
-
-
-
+| In-memory TTL cache            | Fast repeated local lookups without standing up Redis or similar                              |
+| Responsive single-page UI      | Brand-led hero, suggestion chips, and a layout that works across breakpoints                  |
+| pydantic-settings              | Typed config with `.env` loading                                                              |
+| stdlib logging                 | Enough observability for a single-process service (logs land in the uvicorn terminal)         |
+| pytest + Jest with mocks       | Fast, deterministic tests without hitting live APIs                                           |
 
 ## Tests
 
-External providers are mocked; no live Finnhub or OpenAI calls are required.
+External providers are mocked, so you don’t need live Finnhub or OpenAI keys to run the suite.
 
 ### Backend
 
@@ -230,4 +241,3 @@ Coverage includes symbol validation, Finnhub news/profile normalization (includi
 cd frontend
 npm test
 ```
-
