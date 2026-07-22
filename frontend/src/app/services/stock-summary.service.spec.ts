@@ -24,13 +24,34 @@ describe('StockSummaryService', () => {
       expect(result.symbol).toBe('AAPL');
     });
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/stocks/AAPL/summary`);
+    const req = httpMock.expectOne(
+      `${environment.apiBaseUrl}/api/stocks/AAPL/summary?period=7d`,
+    );
     expect(req.request.method).toBe('GET');
     req.flush({
       symbol: 'AAPL',
       summary: 'Test summary',
       bullets: ['One'],
       sources: [],
+      period: '7d',
+      generated_at: '2024-01-01T00:00:00Z',
+      cached: false,
+    });
+  });
+
+  it('passes the selected period as a query param', () => {
+    service.getSummary('MSFT', '30d').subscribe();
+
+    const req = httpMock.expectOne(
+      `${environment.apiBaseUrl}/api/stocks/MSFT/summary?period=30d`,
+    );
+    expect(req.request.params.get('period')).toBe('30d');
+    req.flush({
+      symbol: 'MSFT',
+      summary: 'Test summary',
+      bullets: ['One'],
+      sources: [],
+      period: '30d',
       generated_at: '2024-01-01T00:00:00Z',
       cached: false,
     });
@@ -40,12 +61,20 @@ describe('StockSummaryService', () => {
     service.getSummary('AAPL').subscribe({
       next: () => done.fail('expected error'),
       error: (message: string) => {
-        expect(message).toBe('No recent news found for AAPL');
+        expect(message).toBe('No news found for AAPL in the last 7d. Try a longer period or another symbol.');
         done();
       },
     });
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/stocks/AAPL/summary`);
-    req.flush({ detail: 'No recent news found for AAPL' }, { status: 404, statusText: 'Not Found' });
+    const req = httpMock.expectOne(
+      `${environment.apiBaseUrl}/api/stocks/AAPL/summary?period=7d`,
+    );
+    req.flush(
+      {
+        detail:
+          'No news found for AAPL in the last 7d. Try a longer period or another symbol.',
+      },
+      { status: 404, statusText: 'Not Found' },
+    );
   });
 });

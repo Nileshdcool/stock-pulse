@@ -6,7 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { StockSummaryService } from './services/stock-summary.service';
-import { SummaryResponse } from './models/summary';
+import { NewsPeriod, SummaryResponse } from './models/summary';
 
 @Component({
   selector: 'app-root',
@@ -27,10 +27,18 @@ export class AppComponent {
 
   readonly suggestions = ['AAPL', 'MSFT', 'TSLA', 'NVDA'] as const;
 
+  readonly periodOptions: ReadonlyArray<{ value: NewsPeriod; label: string }> = [
+    { value: '1d', label: '1 day' },
+    { value: '7d', label: '7 days' },
+    { value: '30d', label: '30 days' },
+  ];
+
   readonly symbolControl = new FormControl('AAPL', {
     nonNullable: true,
     validators: [Validators.required, Validators.pattern(/^[A-Za-z0-9.-]{1,12}$/)],
   });
+
+  readonly periodControl = new FormControl<NewsPeriod>('7d', { nonNullable: true });
 
   loading = false;
   error: string | null = null;
@@ -45,6 +53,16 @@ export class AppComponent {
     }
   }
 
+  selectPeriod(period: NewsPeriod): void {
+    if (this.periodControl.value === period) {
+      return;
+    }
+    this.periodControl.setValue(period);
+    if (this.symbolControl.valid && (this.result || this.error)) {
+      this.submit();
+    }
+  }
+
   useSuggestion(symbol: string): void {
     this.symbolControl.setValue(symbol);
     this.symbolControl.markAsTouched();
@@ -53,6 +71,17 @@ export class AppComponent {
 
   onLogoError(): void {
     this.logoFailed = true;
+  }
+
+  formatPeriod(period: NewsPeriod): string {
+    switch (period) {
+      case '1d':
+        return 'Last 24 hours';
+      case '7d':
+        return 'Last 7 days';
+      case '30d':
+        return 'Last 30 days';
+    }
   }
 
   formatGeneratedAt(iso: string): string {
@@ -98,7 +127,7 @@ export class AppComponent {
     this.result = null;
     this.logoFailed = false;
 
-    this.stockSummary.getSummary(this.symbolControl.value).subscribe({
+    this.stockSummary.getSummary(this.symbolControl.value, this.periodControl.value).subscribe({
       next: (response) => {
         this.result = response;
         this.loading = false;

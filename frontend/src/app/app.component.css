@@ -165,6 +165,67 @@ h1 {
   opacity: 0.65;
 }
 
+.period-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 0.85rem;
+  margin: 0 0 0.95rem;
+}
+
+.period-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5a6f64;
+}
+
+.period-toggle {
+  display: inline-flex;
+  padding: 0.2rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(8px);
+}
+
+.period-option {
+  margin: 0;
+  padding: 0.45rem 0.85rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: #4d6358;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.period-option:hover:not(:disabled):not(.active) {
+  color: var(--ink);
+  background: rgba(13, 143, 98, 0.08);
+}
+
+.period-option.active {
+  background: var(--pulse);
+  color: #fff;
+}
+
+.period-option:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.period-badge {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.72rem;
+}
+
 .suggestions {
   display: flex;
   flex-wrap: wrap;
@@ -308,6 +369,7 @@ h1 {
 
 .identity-title {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.55rem;
   min-width: 0;
@@ -542,7 +604,8 @@ h3 {
   .brand-mark,
   .state,
   .result,
-  .sources a {
+  .sources a,
+  .period-option {
     animation: none !important;
     transition: none !important;
   }

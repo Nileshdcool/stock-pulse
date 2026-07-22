@@ -25,6 +25,7 @@ describe('AppComponent', () => {
         related_symbols: ['AAPL'],
       },
     ],
+    period: '7d',
     generated_at: '2024-06-01T00:00:00Z',
     cached: false,
   };
@@ -79,7 +80,7 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     expect(component.symbolControl.value).toBe('MSFT');
-    expect(stockSummary.getSummary).toHaveBeenCalledWith('MSFT');
+    expect(stockSummary.getSummary).toHaveBeenCalledWith('MSFT', '7d');
   });
 
   it('loads a summary when the form is submitted', () => {
@@ -90,8 +91,18 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     expect(event.preventDefault).toHaveBeenCalled();
-    expect(stockSummary.getSummary).toHaveBeenCalledWith('AAPL');
+    expect(stockSummary.getSummary).toHaveBeenCalledWith('AAPL', '7d');
     expect(component.result?.summary).toBe('Apple news looks constructive.');
+  });
+
+  it('refetches when the period changes after a result', () => {
+    stockSummary.getSummary.mockReturnValue(of({ ...sample, period: '30d' }));
+    component.result = sample;
+    component.selectPeriod('30d');
+    fixture.detectChanges();
+
+    expect(component.periodControl.value).toBe('30d');
+    expect(stockSummary.getSummary).toHaveBeenCalledWith('AAPL', '30d');
   });
 
   it('uppercases ticker input as the user types', () => {

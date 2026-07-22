@@ -2,8 +2,8 @@ from datetime import UTC, datetime
 
 import pytest
 
-from app.models import NewsItem, normalize_symbol
-from app.services.news import normalize_finnhub_article
+from app.models import NewsItem, normalize_period, normalize_symbol, period_days
+from app.services.news import normalize_finnhub_article, select_news_for_period
 from app.services.summary import build_user_prompt, parse_summary_payload
 
 
@@ -17,6 +17,52 @@ def test_normalize_symbol_rejects_invalid() -> None:
         normalize_symbol("")
     with pytest.raises(ValueError):
         normalize_symbol("BAD SYMBOL")
+
+
+def test_normalize_period_accepts_valid() -> None:
+    assert normalize_period("1d") == "1d"
+    assert normalize_period(" 7D ") == "7d"
+    assert normalize_period("30d") == "30d"
+    assert period_days("30d") == 30
+
+
+def test_normalize_period_rejects_invalid() -> None:
+    with pytest.raises(ValueError):
+        normalize_period("90d")
+    with pytest.raises(ValueError):
+        normalize_period("")
+
+
+def test_select_news_for_period_spans_older_days() -> None:
+    items = [
+        NewsItem(
+            title=f"Story {index}",
+            url=f"https://example.com/{index}",
+            source="Reuters",
+            published_at=datetime(2024, 6, 30 - index, tzinfo=UTC),
+        )
+        for index in range(20)
+    ]
+
+    selected = select_news_for_period(items, limit=8)
+
+    assert len(selected) == 8
+    assert selected[0].published_at == datetime(2024, 6, 30, tzinfo=UTC)
+    published_days = {item.published_at.date() for item in selected if item.published_at}
+    assert len(published_days) > 1
+    assert min(published_days) < datetime(2024, 6, 30, tzinfo=UTC).date()
+
+
+def test_select_news_for_period_keeps_all_when_under_limit() -> None:
+    items = [
+        NewsItem(
+            title="Only story",
+            url="https://example.com/1",
+            source="WSJ",
+            published_at=datetime(2024, 6, 1, tzinfo=UTC),
+        )
+    ]
+    assert select_news_for_period(items, limit=8) == items
 
 
 def test_normalize_finnhub_article() -> None:

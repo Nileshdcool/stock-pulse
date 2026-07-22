@@ -80,12 +80,29 @@ def test_summary_happy_path(client) -> None:
     assert body["logo_url"] == "https://example.com/aapl.png"
     assert body["summary"] == "Apple news looks constructive."
     assert body["bullets"] == ["iPhone sales strong"]
+    assert body["period"] == "7d"
     assert body["cached"] is False
     assert len(body["sources"]) == 1
     assert body["sources"][0]["related_symbols"] == ["AAPL"]
-    news_service.fetch_company_news.assert_awaited()
+    news_service.fetch_company_news.assert_awaited_once_with("AAPL", days=7, limit=12)
     news_service.fetch_company_profile.assert_awaited()
     summary_service.summarize.assert_awaited()
+
+
+def test_summary_accepts_period(client) -> None:
+    test_client, news_service, _ = client
+    response = test_client.get("/api/stocks/AAPL/summary", params={"period": "30d"})
+    assert response.status_code == 200
+    assert response.json()["period"] == "30d"
+    news_service.fetch_company_news.assert_awaited_once_with("AAPL", days=30, limit=16)
+
+
+def test_summary_rejects_invalid_period(client) -> None:
+    test_client, news_service, _ = client
+    response = test_client.get("/api/stocks/AAPL/summary", params={"period": "90d"})
+    assert response.status_code == 400
+    assert "Invalid period" in response.json()["detail"]
+    news_service.fetch_company_news.assert_not_awaited()
 
 
 def test_summary_uses_cache(client) -> None:
@@ -99,6 +116,18 @@ def test_summary_uses_cache(client) -> None:
     assert summary_service.summarize.await_count == 1
 
 
+def test_summary_cache_is_period_scoped(client) -> None:
+    test_client, news_service, summary_service = client
+    first = test_client.get("/api/stocks/AAPL/summary", params={"period": "1d"})
+    second = test_client.get("/api/stocks/AAPL/summary", params={"period": "30d"})
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["cached"] is False
+    assert second.json()["cached"] is False
+    assert news_service.fetch_company_news.await_count == 2
+    assert summary_service.summarize.await_count == 2
+
+
 def test_invalid_symbol(client) -> None:
     test_client, _, _ = client
     response = test_client.get("/api/stocks/BAD%20SYMBOL/summary")
@@ -108,9 +137,11 @@ def test_invalid_symbol(client) -> None:
 def test_empty_news(client) -> None:
     test_client, news_service, summary_service = client
     news_service.fetch_company_news = AsyncMock(return_value=[])
-    response = test_client.get("/api/stocks/AAPL/summary")
+    response = test_client.get("/api/stocks/AAPL/summary", params={"period": "1d"})
     assert response.status_code == 404
-    assert "No recent news" in response.json()["detail"]
+    detail = response.json()["detail"]
+    assert "No news found" in detail
+    assert "1d" in detail
     summary_service.summarize.assert_not_awaited()
 
 

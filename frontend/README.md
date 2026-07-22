@@ -36,12 +36,17 @@ Then open [http://localhost:4200](http://localhost:4200).
 | Production build  | `npm run build`                |
 | Unit tests        | `npm test`                     |
 
+## Demo
+
+The root [README](../README.md#demo) embeds an animated walkthrough of the UI (`docs/screenshots/demo.gif`, plus `demo.mp4`).
+
 ## What you’ll see in the UI
 
 - A brand-led hero with ticker search (auto-uppercase + validation)
+- Period toggle: 1 day / 7 days / 30 days (re-fetches when a result is already shown)
 - Quick suggestions: AAPL, MSFT, TSLA, NVDA
 - Loading and error states wired to the API
-- A result view with company logo/name (when available), summary, key points, and sources
+- A result view with company logo/name (when available), period badge, summary, key points, and sources
 - Related-ticker chips per source from `related_symbols` (falls back to the symbol you searched)
 - A “cached” badge when the backend returns `cached: true`
 

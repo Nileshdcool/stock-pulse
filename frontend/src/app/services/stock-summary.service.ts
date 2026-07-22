@@ -1,18 +1,21 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { SummaryResponse } from '../models/summary';
+import { NewsPeriod, SummaryResponse } from '../models/summary';
 
 @Injectable({ providedIn: 'root' })
 export class StockSummaryService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiBaseUrl;
 
-  getSummary(symbol: string): Observable<SummaryResponse> {
+  getSummary(symbol: string, period: NewsPeriod = '7d'): Observable<SummaryResponse> {
     const trimmed = symbol.trim().toUpperCase();
+    const params = new HttpParams().set('period', period);
     return this.http
-      .get<SummaryResponse>(`${this.baseUrl}/api/stocks/${encodeURIComponent(trimmed)}/summary`)
+      .get<SummaryResponse>(`${this.baseUrl}/api/stocks/${encodeURIComponent(trimmed)}/summary`, {
+        params,
+      })
       .pipe(catchError((error: HttpErrorResponse) => throwError(() => this.toMessage(error))));
   }
 

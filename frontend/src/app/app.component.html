@@ -13,7 +13,7 @@
       </p>
       <h1>News that moves the market, distilled.</h1>
       <p class="lede">
-        Enter a ticker for an AI summary of recent company headlines.
+        Enter a ticker and pick a time window for an AI summary of company headlines.
       </p>
     </header>
 
@@ -44,6 +44,24 @@
       </button>
     </form>
 
+    <div class="period-row" role="group" aria-label="News time period">
+      <span class="period-label">Period</span>
+      <div class="period-toggle">
+        @for (option of periodOptions; track option.value) {
+          <button
+            type="button"
+            class="period-option"
+            [class.active]="periodControl.value === option.value"
+            [attr.aria-pressed]="periodControl.value === option.value"
+            [disabled]="loading"
+            (click)="selectPeriod(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
     <p class="suggestions">
       Try
       @for (symbol of suggestions; track symbol; let last = $last) {
@@ -61,7 +79,7 @@
         <mat-spinner diameter="32"></mat-spinner>
         <div>
           <strong>Reading the tape</strong>
-          <span>Fetching news and generating summary…</span>
+          <span>Fetching {{ formatPeriod(periodControl.value).toLowerCase() }} of news…</span>
         </div>
       </div>
     }
@@ -96,6 +114,7 @@
             <div class="identity-text">
               <div class="identity-title">
                 <h2>{{ result.symbol }}</h2>
+                <span class="badge period-badge">{{ formatPeriod(result.period) }}</span>
                 @if (result.cached) {
                   <span class="badge">cached</span>
                 }

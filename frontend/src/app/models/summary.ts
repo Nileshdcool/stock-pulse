@@ -1,3 +1,5 @@
+export type NewsPeriod = '1d' | '7d' | '30d';
+
 export interface SourceLink {
   title: string;
   url: string;
@@ -13,6 +15,7 @@ export interface SummaryResponse {
   summary: string;
   bullets: string[];
   sources: SourceLink[];
+  period: NewsPeriod;
   generated_at: string;
   cached: boolean;
 }
